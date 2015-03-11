@@ -445,6 +445,21 @@ cons_putc(int c)
 	cga_putc(c);
 }
 
+// output a character to the console
+void
+cons_ctrl_putc(int c)
+{
+	serial_putc(c);
+	lpt_putc(c);
+}
+
+// output a character to the console
+void
+cons_disp_putc(int c)
+{
+	cga_putc(c);
+}
+
 // initialize the console devices
 void
 cons_init(void)
