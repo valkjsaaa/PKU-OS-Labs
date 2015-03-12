@@ -79,6 +79,7 @@ static void
 putch(int ch, int *cnt)
 {
 	*cnt++;
+	cons_ctrl_putc(ch);
 	switch(state){
 		case NORMAL:
 		{
@@ -86,16 +87,16 @@ putch(int ch, int *cnt)
 				state = START;
 			}
 			else {
-				cputchar(ch);
+				cons_disp_putc(ch);
 			}
 			break;
 		}
 		case START:{
-			if(ch == ']'){
+			if(ch == '['){
 				state = ESCAPING;
 			}else{
-				cputchar('\x1B');
-				cputchar(ch);
+				cons_disp_putc('\x1B');
+				cons_disp_putc(ch);
 			}
 		}
 		case ESCAPING:
