@@ -8,6 +8,7 @@
 
 #include <inc/memlayout.h>
 #include <inc/assert.h>
+#include <kern/monitor.h>
 
 extern char bootstacktop[], bootstack[];
 
