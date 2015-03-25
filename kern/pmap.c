@@ -97,12 +97,13 @@ boot_alloc(uint32_t n)
 	// nextfree.  Make sure nextfree is kept aligned
 	// to a multiple of PGSIZE.
 
+	result = nextfree;
+	nextfree += ROUNDUP(n, PGSIZE);
+
 	if (n > npages * PGSIZE - KERNBASE) {
 		panic("boot_alloc(): Out of memory !\n");
 	}
 
-	result = nextfree;
-	nextfree += ROUNDUP(n, PGSIZE);
 
 	return result;
 }
@@ -180,11 +181,6 @@ mem_init(void)
 					ROUNDUP(sizeof(struct PageInfo) * npages, PGSIZE),
 					PADDR(pages),
 					(PTE_U | PTE_P));
-	boot_map_region(kern_pgdir,
-					UPAGES,
-					1,
-					PADDR(pages),
-					(PTE_P | PTE_W));
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -399,11 +395,10 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		pp->pp_ref++;
 		*pde = (page2pa(pp) | PTE_P | PTE_W | PTE_U);
 	}
-	//FIXME: nasty expression?
-	// return (pte_t *)((PDX(pgdir) << PTXSHIFT) | (((uint32_t)va >> 10) & 0x3FFFFF));
 	result = KADDR(PTE_ADDR(*pde));
 	result += va_ptx;
 	return result;
+	// return (pte_t*)PGADDR(PDX(kern_pgdir), PDX(va), PGOFF(va)<<2);
 }
 
 //
