@@ -58,6 +58,7 @@ i386_detect_memory(void)
 // --------------------------------------------------------------
 
 static void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
+static void boot_map_large_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm);
 static void check_page_free_list(bool only_low_memory);
 static void check_page_alloc(void);
 static void check_kern_pgdir(void);
@@ -208,7 +209,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 
-	boot_map_region(kern_pgdir,
+	boot_map_large_region(kern_pgdir,
 					KERNBASE,
 					ROUNDUP(-KERNBASE-1, PGSIZE),
 					0,
@@ -419,6 +420,40 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 	for (size_ptr; size_ptr < size; size_ptr += PGSIZE)
 	{
 		*pgdir_walk(pgdir, (void *)va + size_ptr, 1) = (pa + size_ptr) | PTE_P | perm;
+	}
+}
+
+//
+// Map [va, va+size) of virtual address space to physical [pa, pa+size)
+// in the page table rooted at pgdir.  Size is a multiple of PGSIZE, and
+// va and pa are both page-aligned.
+// Use permission bits perm|PTE_P for the entries.
+//
+// This function is only intended to set up the ``static'' mappings
+// above UTOP. As such, it should *not* change the pp_ref field on the
+// mapped pages.
+//
+// Hint: the TA solution uses pgdir_walk
+static void
+boot_map_large_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
+{
+	uint32_t edx;
+	cpuid(1, NULL, NULL, NULL, &edx);
+	if (edx & 0x8)
+	{
+		cprintf("va = %x; pa = %x; size = %x;PTSIZE = %x\n", va, pa, size, PTSIZE);
+		assert(PTX(va) == PTX(pa));
+		assert(PGOFF(va) == PGOFF (pa));
+
+		size_t size_ptr = 0;
+		for (size_ptr; size_ptr < size; size_ptr += PTSIZE)
+		{
+			cprintf("idx = %x\n", PDX(va + size_ptr));
+			pde_t* pde = &pgdir[PDX(va + size_ptr)];
+			*pde = (pa + size_ptr) | PTE_P | perm | PTE_PS;
+		}
+	}else{
+		boot_map_region(pgdir, va, size, pa, perm);
 	}
 }
 
