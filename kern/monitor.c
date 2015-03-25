@@ -29,7 +29,8 @@ static struct Command commands[] = {
 	{ "backtrace", "Back trace the functions", mon_backtrace},
 	{ "showmappings", "Show virtual memory mappings and permission", mon_showmappings},
 	{ "setperm", "Set virtual memory permission", mon_setperm},
-	{ "dumpaddress", "Dump a range of virtual memory", mon_dumpaddress}
+	{ "dumpva", "Dump a range of virtual memory", mon_dumpva},
+	{ "dumppa", "Dump a range of physical memory", mon_dumppa}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -136,7 +137,7 @@ mon_setperm(int argc, char **argv, struct Trapframe *tf)
 
 
 int
-mon_dumpaddress(int argc, char **argv, struct Trapframe *tf)
+mon_dumpva(int argc, char **argv, struct Trapframe *tf)
 {
 	void* addr_start = (void*)strtol(argv[1], NULL, 0);
 	void* addr_end = (void*)strtol(argv[2], NULL, 0);
@@ -146,6 +147,22 @@ mon_dumpaddress(int argc, char **argv, struct Trapframe *tf)
 	for (addr_start; addr_start < addr_end; ++addr_start)
 	{
 		cprintf("%08x", *(char*)addr_start);
+	}
+	cprintf("\n");
+	return 0;
+}
+
+int
+mon_dumppa(int argc, char **argv, struct Trapframe *tf)
+{
+	physaddr_t addr_start = strtol(argv[1], NULL, 0);
+	physaddr_t addr_end = strtol(argv[2], NULL, 0);
+
+	cprintf("Raw dump from virtual address from %08x to %08x\n", addr_start, addr_end);
+
+	for (addr_start; addr_start < addr_end; ++addr_start)
+	{
+		cprintf("%08x", *(char*)KADDR(addr_start));
 	}
 	cprintf("\n");
 	return 0;
