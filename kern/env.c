@@ -282,14 +282,14 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
 	void* lb = (void *)ROUNDDOWN((size_t)va, PGSIZE),
-        * ub = (void *)ROUNDUP((size_t)va+len,PGSIZE);
-    for (lb; lb < ub; lb += PGSIZE)
-    {
-        struct PageInfo * p = page_alloc(0);
-        if (!p)
-            panic("Out of memory");
-        page_insert(e->env_pgdir, p, lb, (PTE_P|PTE_W|PTE_U));
-    }
+		* ub = (void *)ROUNDUP((size_t)va+len+0,PGSIZE);
+	for (lb; lb < ub; lb += PGSIZE)
+	{
+		struct PageInfo * p = page_alloc(0);
+		if (!p)
+			panic("Out of memory");
+		page_insert(e->env_pgdir, p, lb, (PTE_P|PTE_W|PTE_U));
+	}
 }
 
 //
@@ -363,7 +363,7 @@ load_icode(struct Env *e, uint8_t *binary)
 	{
 		// p_pa is the load address of this segment (as well
 		// as the physical address)
-		if (ph->p_type != ELF_PROG_LOAD)
+		if (ph->p_type == ELF_PROG_LOAD)
 		{
 			region_alloc(e, (void *)ph->p_va, ph->p_memsz);
 
@@ -372,14 +372,14 @@ load_icode(struct Env *e, uint8_t *binary)
 		}
 	}
 
-	lcr3(PADDR(kern_pgdir));
-
 	e->env_tf.tf_eip = elfHeader->e_entry;
 
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
 
 	region_alloc(e, (void *)USTACKTOP - PGSIZE, PGSIZE);
+
+	lcr3(PADDR(kern_pgdir));
 }
 
 //
