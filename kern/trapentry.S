@@ -21,32 +21,39 @@
  * where NAME is the argument passed to TRAPHANDLER.
  */
 #define TRAPHANDLER(name, num)                      \
+    .text;\
     .globl name;        /* define global symbol for 'name' */   \
     .type name, @function;  /* symbol type is function */       \
     .align 2;       /* align function definition */     \
     name:           /* function starts here */      \
     pushl $(num);                           \
-    jmp _alltraps
+    jmp _alltraps;\
+    .data;\
+    .long name;
 
 /* Use TRAPHANDLER_NOEC for traps where the CPU doesn't push an error code.
  * It pushes a 0 in place of the error code, so the trap frame has the same
  * format in either case.
  */
 #define TRAPHANDLER_NOEC(name, num)                 \
+    .text;\
     .globl name;                            \
     .type name, @function;                      \
     .align 2;                           \
     name:                               \
     pushl $0;                           \
     pushl $(num);                           \
-    jmp _alltraps
-
-.text
+    jmp _alltraps; \
+    .data;\
+    .long name;
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
+.data
+.globl trap_handlers
+trap_handlers:
 TRAPHANDLER_NOEC(thdlr0, 0)
 TRAPHANDLER_NOEC(thdlr1, 1)
 TRAPHANDLER_NOEC(thdlr2, 2)
@@ -308,6 +315,8 @@ TRAPHANDLER_NOEC(thdlr255, 255)
  * Lab 3: Your code here for _alltraps
  */
 
+.text
+
 _alltraps:
     pushl %ds
     pushl %es
@@ -317,263 +326,3 @@ _alltraps:
     movw %ax, %es
     pushl %esp
     call trap
-
-.data
-.globl trap_handlers
-trap_handlers:
-    .long thdlr0
-    .long thdlr1
-    .long thdlr2
-    .long thdlr3
-    .long thdlr4
-    .long thdlr5
-    .long thdlr6
-    .long thdlr7
-    .long thdlr8
-    .long thdlr9
-    .long thdlr10
-    .long thdlr11
-    .long thdlr12
-    .long thdlr13
-    .long thdlr14
-    .long thdlr15
-    .long thdlr16
-    .long thdlr17
-    .long thdlr18
-    .long thdlr19
-    .long thdlr20
-    .long thdlr21
-    .long thdlr22
-    .long thdlr23
-    .long thdlr24
-    .long thdlr25
-    .long thdlr26
-    .long thdlr27
-    .long thdlr28
-    .long thdlr29
-    .long thdlr30
-    .long thdlr31
-    .long thdlr32
-    .long thdlr33
-    .long thdlr34
-    .long thdlr35
-    .long thdlr36
-    .long thdlr37
-    .long thdlr38
-    .long thdlr39
-    .long thdlr40
-    .long thdlr41
-    .long thdlr42
-    .long thdlr43
-    .long thdlr44
-    .long thdlr45
-    .long thdlr46
-    .long thdlr47
-    .long thdlr48
-    .long thdlr49
-    .long thdlr50
-    .long thdlr51
-    .long thdlr52
-    .long thdlr53
-    .long thdlr54
-    .long thdlr55
-    .long thdlr56
-    .long thdlr57
-    .long thdlr58
-    .long thdlr59
-    .long thdlr60
-    .long thdlr61
-    .long thdlr62
-    .long thdlr63
-    .long thdlr64
-    .long thdlr65
-    .long thdlr66
-    .long thdlr67
-    .long thdlr68
-    .long thdlr69
-    .long thdlr70
-    .long thdlr71
-    .long thdlr72
-    .long thdlr73
-    .long thdlr74
-    .long thdlr75
-    .long thdlr76
-    .long thdlr77
-    .long thdlr78
-    .long thdlr79
-    .long thdlr80
-    .long thdlr81
-    .long thdlr82
-    .long thdlr83
-    .long thdlr84
-    .long thdlr85
-    .long thdlr86
-    .long thdlr87
-    .long thdlr88
-    .long thdlr89
-    .long thdlr90
-    .long thdlr91
-    .long thdlr92
-    .long thdlr93
-    .long thdlr94
-    .long thdlr95
-    .long thdlr96
-    .long thdlr97
-    .long thdlr98
-    .long thdlr99
-    .long thdlr100
-    .long thdlr101
-    .long thdlr102
-    .long thdlr103
-    .long thdlr104
-    .long thdlr105
-    .long thdlr106
-    .long thdlr107
-    .long thdlr108
-    .long thdlr109
-    .long thdlr110
-    .long thdlr111
-    .long thdlr112
-    .long thdlr113
-    .long thdlr114
-    .long thdlr115
-    .long thdlr116
-    .long thdlr117
-    .long thdlr118
-    .long thdlr119
-    .long thdlr120
-    .long thdlr121
-    .long thdlr122
-    .long thdlr123
-    .long thdlr124
-    .long thdlr125
-    .long thdlr126
-    .long thdlr127
-    .long thdlr128
-    .long thdlr129
-    .long thdlr130
-    .long thdlr131
-    .long thdlr132
-    .long thdlr133
-    .long thdlr134
-    .long thdlr135
-    .long thdlr136
-    .long thdlr137
-    .long thdlr138
-    .long thdlr139
-    .long thdlr140
-    .long thdlr141
-    .long thdlr142
-    .long thdlr143
-    .long thdlr144
-    .long thdlr145
-    .long thdlr146
-    .long thdlr147
-    .long thdlr148
-    .long thdlr149
-    .long thdlr150
-    .long thdlr151
-    .long thdlr152
-    .long thdlr153
-    .long thdlr154
-    .long thdlr155
-    .long thdlr156
-    .long thdlr157
-    .long thdlr158
-    .long thdlr159
-    .long thdlr160
-    .long thdlr161
-    .long thdlr162
-    .long thdlr163
-    .long thdlr164
-    .long thdlr165
-    .long thdlr166
-    .long thdlr167
-    .long thdlr168
-    .long thdlr169
-    .long thdlr170
-    .long thdlr171
-    .long thdlr172
-    .long thdlr173
-    .long thdlr174
-    .long thdlr175
-    .long thdlr176
-    .long thdlr177
-    .long thdlr178
-    .long thdlr179
-    .long thdlr180
-    .long thdlr181
-    .long thdlr182
-    .long thdlr183
-    .long thdlr184
-    .long thdlr185
-    .long thdlr186
-    .long thdlr187
-    .long thdlr188
-    .long thdlr189
-    .long thdlr190
-    .long thdlr191
-    .long thdlr192
-    .long thdlr193
-    .long thdlr194
-    .long thdlr195
-    .long thdlr196
-    .long thdlr197
-    .long thdlr198
-    .long thdlr199
-    .long thdlr200
-    .long thdlr201
-    .long thdlr202
-    .long thdlr203
-    .long thdlr204
-    .long thdlr205
-    .long thdlr206
-    .long thdlr207
-    .long thdlr208
-    .long thdlr209
-    .long thdlr210
-    .long thdlr211
-    .long thdlr212
-    .long thdlr213
-    .long thdlr214
-    .long thdlr215
-    .long thdlr216
-    .long thdlr217
-    .long thdlr218
-    .long thdlr219
-    .long thdlr220
-    .long thdlr221
-    .long thdlr222
-    .long thdlr223
-    .long thdlr224
-    .long thdlr225
-    .long thdlr226
-    .long thdlr227
-    .long thdlr228
-    .long thdlr229
-    .long thdlr230
-    .long thdlr231
-    .long thdlr232
-    .long thdlr233
-    .long thdlr234
-    .long thdlr235
-    .long thdlr236
-    .long thdlr237
-    .long thdlr238
-    .long thdlr239
-    .long thdlr240
-    .long thdlr241
-    .long thdlr242
-    .long thdlr243
-    .long thdlr244
-    .long thdlr245
-    .long thdlr246
-    .long thdlr247
-    .long thdlr248
-    .long thdlr249
-    .long thdlr250
-    .long thdlr251
-    .long thdlr252
-    .long thdlr253
-    .long thdlr254
-    .long thdlr255
