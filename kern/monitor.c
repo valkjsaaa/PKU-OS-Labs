@@ -31,7 +31,9 @@ static struct Command commands[] = {
 	{ "showmappings", "Show virtual memory mappings and permission", mon_showmappings},
 	{ "setperm", "Set virtual memory permission", mon_setperm},
 	{ "dumpva", "Dump a range of virtual memory", mon_dumpva},
-	{ "dumppa", "Dump a range of physical memory", mon_dumppa}
+	{ "dumppa", "Dump a range of physical memory", mon_dumppa},
+	{ "next", "Single step on current breakpoint", mon_next},
+	{ "continue", "Continue on current breakpoint", mon_continue}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -167,6 +169,35 @@ mon_dumppa(int argc, char **argv, struct Trapframe *tf)
 	}
 	cprintf("\n");
 	return 0;
+}
+
+/***** Implementations single step debugging *****/
+
+int
+mon_continue(int argc, char **argv, struct Trapframe *tf)
+{
+	if (!tf)
+	{
+		cprintf("No breaked environment!\n");
+		return 0;
+	}
+	tf->tf_eflags |= FL_RF;
+	tf->tf_eflags &= ~FL_TF;
+
+	return -1;
+}
+
+int
+mon_next(int argc, char **argv, struct Trapframe *tf)
+{
+	if (!tf)
+	{
+		cprintf("No breaked environment!\n");
+		return 0;
+	}
+	tf->tf_eflags |= FL_TF;
+
+	return -1;
 }
 
 /***** Kernel monitor command interpreter *****/

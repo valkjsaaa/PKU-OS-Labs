@@ -22,4 +22,8 @@ int mon_setperm(int argc, char **argv, struct Trapframe *tf);
 int mon_dumpva(int argc, char **argv, struct Trapframe *tf);
 int mon_dumppa(int argc, char **argv, struct Trapframe *tf);
 
+// Functions for single step debugging
+int mon_continue(int argc, char **argv, struct Trapframe *tf);
+int mon_next(int argc, char **argv, struct Trapframe *tf);
+
 #endif	// !JOS_KERN_MONITOR_H
