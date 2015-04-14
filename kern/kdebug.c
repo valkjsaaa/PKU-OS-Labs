@@ -58,7 +58,7 @@ struct UserStabData {
 //
 static void
 stab_binsearch(const struct Stab *stabs, int *region_left, int *region_right,
-	       int type, uintptr_t addr)
+		   int type, uintptr_t addr)
 {
 	int l = *region_left, r = *region_right, any_matches = 0;
 
@@ -95,8 +95,8 @@ stab_binsearch(const struct Stab *stabs, int *region_left, int *region_right,
 	else {
 		// find rightmost region containing 'addr'
 		for (l = *region_right;
-		     l > *region_left && stabs[l].n_type != type;
-		     l--)
+			 l > *region_left && stabs[l].n_type != type;
+			 l--)
 			/* do nothing */;
 		*region_left = l;
 	}
@@ -142,6 +142,8 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 		// Make sure this memory is valid.
 		// Return -1 if it is not.  Hint: Call user_mem_check.
 		// LAB 3: Your code here.
+		if(user_mem_check(curenv, usd, sizeof(struct UserStabData), PTE_U | PTE_P))
+			return -1;
 
 		stabs = usd->stabs;
 		stab_end = usd->stab_end;
@@ -150,6 +152,9 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 
 		// Make sure the STABS and string table memory is valid.
 		// LAB 3: Your code here.
+		if ((user_mem_check(curenv, stabs, stab_end - stabs, PTE_U | PTE_P)) ||
+			(user_mem_check(curenv, stabstr, stabstr_end - stabstr, PTE_U | PTE_P)) )
+			return -1;
 	}
 
 	// String table validity checks
@@ -216,8 +221,8 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	// can interpolate code from a different file!
 	// Such included source files use the N_SOL stab type.
 	while (lline >= lfile
-	       && stabs[lline].n_type != N_SOL
-	       && (stabs[lline].n_type != N_SO || !stabs[lline].n_value))
+		   && stabs[lline].n_type != N_SOL
+		   && (stabs[lline].n_type != N_SO || !stabs[lline].n_value))
 		lline--;
 	if (lline >= lfile && stabs[lline].n_strx < stabstr_end - stabstr)
 		info->eip_file = stabstr + stabs[lline].n_strx;
@@ -227,8 +232,8 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	// or 0 if there was no containing function.
 	if (lfun < rfun)
 		for (lline = lfun + 1;
-		     lline < rfun && stabs[lline].n_type == N_PSYM;
-		     lline++)
+			 lline < rfun && stabs[lline].n_type == N_PSYM;
+			 lline++)
 			info->eip_fn_narg++;
 
 	return 0;
