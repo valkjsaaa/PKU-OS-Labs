@@ -12,6 +12,8 @@
 #include <kern/kdebug.h>
 #include <kern/trap.h>
 
+#include <kern/pmap.h>
+
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
 
@@ -25,6 +27,11 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "backtrace", "Back trace the functions", mon_backtrace},
+	{ "showmappings", "Show virtual memory mappings and permission", mon_showmappings},
+	{ "setperm", "Set virtual memory permission", mon_setperm},
+	{ "dumpva", "Dump a range of virtual memory", mon_dumpva},
+	{ "dumppa", "Dump a range of physical memory", mon_dumppa}
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -59,11 +66,108 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	uint32_t *ebp = (uint32_t*)read_ebp();
+	uint32_t eip = ebp[1];
+	struct Eipdebuginfo info;
+
+	cprintf ("Stack backtrace:\n");
+	while (ebp){
+		cprintf ("  ebp %08x  eip %08x  args  ", ebp, eip);
+
+		int i = 2;
+		for (i; i < 7; ++i)
+		{
+			cprintf("%08x ", ebp[i]);
+		}
+		cprintf("\n");
+
+		debuginfo_eip(eip,&info);
+		cprintf ("         %s:%d: %.*s+%d\n",
+				 info.eip_file,
+				 info.eip_line,
+				 info.eip_fn_namelen,
+				 info.eip_fn_name,
+				 ebp[1]-info.eip_fn_addr);
+
+		ebp = (uint32_t*) ebp[0];
+		eip = ebp[1];
+	}
 	return 0;
 }
 
+/***** Implementations page debug commands *****/
 
+int
+internal_showmappings(void* addr_start, void* addr_end)
+{
+	for (addr_start; addr_start < addr_end; addr_start+=PGSIZE)
+	{
+		physaddr_t physaddr_ptr = *(pgdir_walk(kern_pgdir, addr_start, 0));
+		if(physaddr_ptr) {
+			cprintf("va %08x pa %08x perm %08x\n", addr_start, PTE_ADDR(physaddr_ptr), physaddr_ptr & 0xFFF);
+		}
+		else {
+			cprintf("va %08x page not allcated", addr_start);
+		}
+	}
+	return 0;
+}
+
+int
+mon_showmappings(int argc, char **argv, struct Trapframe *tf)
+{
+	void* addr_start = (void*)strtol(argv[1], NULL, 0);
+	void* addr_end = (void*)strtol(argv[2], NULL, 0);
+	return internal_showmappings(addr_start, addr_end);
+}
+
+int
+mon_setperm(int argc, char **argv, struct Trapframe *tf)
+{
+    void* addr = (void*)strtol(argv[1], NULL, 0);
+    pte_t *pte = pgdir_walk(kern_pgdir, (void *)addr, 0);
+    uint32_t perm = 0;
+    if (strchr(argv[2], 'P')) perm |= PTE_P;
+    if (strchr(argv[2], 'W')) perm |= PTE_W;
+    if (strchr(argv[2], 'U')) perm |= PTE_U;
+    if (strchr(argv[2], '0')) perm = 0;
+    *pte = *pte | perm;
+    internal_showmappings(addr, addr+PGSIZE);
+    return 0;
+}
+
+
+int
+mon_dumpva(int argc, char **argv, struct Trapframe *tf)
+{
+	void* addr_start = (void*)strtol(argv[1], NULL, 0);
+	void* addr_end = (void*)strtol(argv[2], NULL, 0);
+
+	cprintf("Raw dump from virtual address from %08x to %08x\n", addr_start, addr_end);
+
+	for (addr_start; addr_start < addr_end; ++addr_start)
+	{
+		cprintf("%08x", *(char*)addr_start);
+	}
+	cprintf("\n");
+	return 0;
+}
+
+int
+mon_dumppa(int argc, char **argv, struct Trapframe *tf)
+{
+	physaddr_t addr_start = strtol(argv[1], NULL, 0);
+	physaddr_t addr_end = strtol(argv[2], NULL, 0);
+
+	cprintf("Raw dump from virtual address from %08x to %08x\n", addr_start, addr_end);
+
+	for (addr_start; addr_start < addr_end; ++addr_start)
+	{
+		cprintf("%08x", *(char*)KADDR(addr_start));
+	}
+	cprintf("\n");
+	return 0;
+}
 
 /***** Kernel monitor command interpreter *****/
 
