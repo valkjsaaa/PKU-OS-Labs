@@ -123,7 +123,7 @@ env_init(void)
 
 	env_free_list = NULL;
 
-	int i = NENV;
+	int i = NENV - 1;
 
 	for (i; i >= 0; i--)
 	{
