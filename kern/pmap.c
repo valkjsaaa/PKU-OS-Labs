@@ -285,7 +285,6 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-
 }
 
 // --------------------------------------------------------------
@@ -328,7 +327,7 @@ page_init(void)
 	page_free_list = NULL;
 	size_t i;
 	for (i = 0; i < npages; i++) {
-		if (i == 0){
+		if (i == 0 || i == PGNUM(MPENTRY_PADDR)) {
 			pages[i].pp_ref = 0;
 			pages[i].pp_link = NULL;
 		}else if (i < npages_basemem){
@@ -611,7 +610,18 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+
+	uintptr_t current_base = base;
+	base += ROUNDUP(size, PGSIZE);
+	if (base > MMIOLIM)
+		panic("MMIO overflow");
+	boot_map_region(kern_pgdir,
+	                current_base,
+	                ROUNDUP(size, PGSIZE),
+	                pa,
+	                PTE_W | PTE_PCD | PTE_PWT | PTE_P);
+	return (void *)current_base;
+	// panic("mmio_map_region not implemented");
 }
 
 static uintptr_t user_mem_check_addr;
