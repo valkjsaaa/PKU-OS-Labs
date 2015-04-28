@@ -368,13 +368,12 @@ page_fault_handler(struct Trapframe *tf)
 		{
 			cur_uxstacktop = UXSTACKTOP;
 		}
-		struct UTrapframe *utf = (struct UTrapframe *)cur_uxstacktop - (sizeof(struct UTrapframe));
-
+		struct UTrapframe *utf = (struct UTrapframe *)(cur_uxstacktop - (sizeof(struct UTrapframe)));
 		user_mem_assert(curenv, utf, (sizeof(struct UTrapframe)), PTE_U | PTE_W);
-
 		utf->utf_fault_va = fault_va;
 		utf->utf_err = tf->tf_err;
 		utf->utf_regs = tf->tf_regs;
+		utf->utf_eip = tf->tf_eip;
 		utf->utf_eflags = tf->tf_eflags;
 		utf->utf_esp = tf->tf_esp;
 		tf->tf_esp = (uintptr_t)utf;
