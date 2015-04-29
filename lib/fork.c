@@ -25,6 +25,13 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	if (!((err & FEC_WR) &&
+	      (uvpd[PDX(addr)] & PTE_P) &&
+	      (uvpt[PGNUM(addr)] & PTE_P) &&
+	      (uvpt[PGNUM(addr)] & PTE_COW)))
+	{
+		panic("not copy-on-write pgfault");
+	}
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -34,8 +41,17 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 
-	panic("pgfault not implemented");
+	int PTE_NOCOW = PTE_SYSCALL & (~PTE_COW);
+	addr = ROUNDDOWN(addr, PGSIZE);
+	sys_page_alloc(0, PFTEMP, PTE_W | PTE_P | PTE_U);
+	memcpy(PFTEMP, addr, PGSIZE);
+	sys_page_map(0, PFTEMP,
+	             0, addr,
+	             (uvpt[PGNUM(addr)] & PTE_NOCOW) | PTE_W);
+	sys_page_unmap(0, PFTEMP);
+	return;
 }
+
 
 //
 // Map our virtual page pn (address pn*PGSIZE) into the target envid
@@ -54,7 +70,21 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 
 	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	if ((uvpt[pn] & PTE_COW) ||
+	    (uvpt[pn] & PTE_W))
+	{
+		sys_page_map(0, PGADDR(0, pn, 0),
+		             envid, PGADDR(0, pn, 0),
+		             ((uvpt[pn] & PTE_SYSCALL) & (~PTE_W)) | PTE_COW);
+		sys_page_map(0, PGADDR(0, pn, 0),
+		             0, PGADDR(0, pn, 0),
+		             ((uvpt[pn] & PTE_SYSCALL) & (~PTE_W)) | PTE_COW);
+	}
+	else{
+		sys_page_map(0, PGADDR(0, pn, 0),
+		             envid, PGADDR(0, pn, 0),
+		             (uvpt[pn] & PTE_SYSCALL));
+	}
 	return 0;
 }
 
@@ -78,7 +108,33 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	panic("fork not implemented");
+	set_pgfault_handler(pgfault);
+	envid_t child_envid = sys_exofork();
+	if (child_envid < 0)
+	{
+		panic("fork failed");
+	}
+	if (child_envid == 0)
+	{
+		set_pgfault_handler(pgfault);
+		thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+	int i;
+	for (i = 0; i < USTACKTOP; i += PGSIZE)
+	{
+		if ((uvpd[PDX(i)] & PTE_P) &&
+		    (uvpt[PGNUM(i)] & PTE_P) &&
+		    (uvpt[PGNUM(i)] & PTE_U))
+		{
+			duppage(child_envid, PGNUM(i));
+		}
+	}
+	extern void _pgfault_upcall();
+	sys_page_alloc(child_envid, (void *)(0xeebff000), PTE_U|PTE_W|PTE_P);
+	sys_env_set_pgfault_upcall(child_envid, _pgfault_upcall);
+	sys_env_set_status(child_envid, ENV_RUNNABLE);
+	return child_envid;
 }
 
 // Challenge!
