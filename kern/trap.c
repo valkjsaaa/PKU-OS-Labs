@@ -77,7 +77,7 @@ trap_init(void)
 	// LAB 3: Your code here.
 
 	// int i = 0;
-	// for ( ; i < 16 ; i++) {
+	// for ( ; i < 32 ; i++) {
 	// 	SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
 	// }
 
@@ -86,10 +86,11 @@ trap_init(void)
 	// SETGATE(idt[T_SYSCALL], 0, GD_KT, trap_handlers[T_SYSCALL], 3);
 
 	  int i = 0;
-  for (; i < 32; ++i) {
-	SETGATE(idt[i], 1, GD_KT, trap_handlers[i], 0);
+  for (; i < 16; ++i) {
+	SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
   }
   SETGATE(idt[T_NMI], 0, GD_KT, trap_handlers[T_NMI], 0);
+  SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, trap_handlers[IRQ_OFFSET + IRQ_TIMER], 0);
 
   for (; i < 48 ; ++i) {
 	SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
@@ -209,10 +210,6 @@ trap_dispatch(struct Trapframe *tf)
 		return;
 	}
 
-	// Handle clock interrupts. Don't forget to acknowledge the
-	// interrupt using lapic_eoi() before calling the scheduler!
-	// LAB 4: Your code here.
-
 	if(tf->tf_trapno == T_PGFLT){
 		page_fault_handler(tf);
 		return;
@@ -232,6 +229,17 @@ trap_dispatch(struct Trapframe *tf)
 										   tf->tf_regs.reg_esi))<0)
 			panic("Invalid syscall");
 		return ;
+	}
+
+	// Handle clock interrupts. Don't forget to acknowledge the
+	// interrupt using lapic_eoi() before calling the scheduler!
+	// LAB 4: Your code here.
+
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER)
+	{
+		 lapic_eoi();
+		 sched_yield();
+		 return;
 	}
 
 
