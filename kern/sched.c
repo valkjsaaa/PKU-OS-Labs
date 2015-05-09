@@ -30,21 +30,31 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
 
-	int curenv_idx = curenv ? ENVX(curenv->env_id) : 0;
 	int i;
+	int sum = 0;
+	extern int32_t ticket_sum;
+
+	static int random = 1;
+	random = (16807 * random);
+	random = random > 0 ? random: -random;
+	int32_t ticket_ran = random % ticket_sum;
+
 	for (i = 0; i < NENV; ++i)
 	{
-		int env_idx = ENVX(curenv_idx + i);
-		if (envs[env_idx].env_status == ENV_RUNNABLE)
+		struct Env* e = &envs[ENVX(i)];
+		if (e->env_status == ENV_RUNNABLE)
 		{
-			env_run(&envs[env_idx]);
+			ticket_ran -= e->ticket_num;
+			if (ticket_ran <= 0)
+			{
+				env_run(e);
+			}
 		}
 	}
 	if (curenv && curenv->env_status == ENV_RUNNING)
 	{
 		env_run(curenv);
 	}
-
 	// sched_halt never returns
 	sched_halt();
 }

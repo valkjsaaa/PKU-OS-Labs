@@ -18,6 +18,7 @@
 struct Env *envs = NULL;		// All environments
 static struct Env *env_free_list;	// Free environment list
 					// (linked by Env->env_link)
+int32_t ticket_sum = 0;
 
 #define ENVGENSHIFT	12		// >= LOGNENV
 
@@ -61,6 +62,25 @@ struct Segdesc gdt[NCPU + 5] =
 struct Pseudodesc gdt_pd = {
 	sizeof(gdt) - 1, (unsigned long) gdt
 };
+
+// Ticket based scheduling
+
+void
+add_ticket(struct Env *e, int32_t t){
+	ticket_sum += t;
+	e->ticket_num += t;
+}
+
+void
+sub_ticket(struct Env *e, int32_t t){
+	ticket_sum -= t;
+	e->ticket_num -= t;
+}
+
+void
+remove_ticket(struct Env *e){
+	sub_ticket(e, e->ticket_num);
+}
 
 //
 // Converts an envid to an env pointer.
@@ -237,6 +257,10 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_type = ENV_TYPE_USER;
 	e->env_status = ENV_RUNNABLE;
 	e->env_runs = 0;
+
+	// Give some tickets
+
+	add_ticket(e, BASETICKETS);
 
 	// Clear out all the saved register state,
 	// to prevent the register values
@@ -481,6 +505,7 @@ env_destroy(struct Env *e)
 	// it traps to the kernel.
 	if (e->env_status == ENV_RUNNING && curenv != e) {
 		e->env_status = ENV_DYING;
+		remove_ticket(e);
 		return;
 	}
 
@@ -559,4 +584,3 @@ env_run(struct Env *e)
 
 	panic("env_run not yet implemented");
 }
-

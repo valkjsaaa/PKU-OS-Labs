@@ -92,6 +92,7 @@ sys_exofork(void)
 		return result;
 	newenv->env_tf = curenv->env_tf;
 	newenv->env_tf.tf_regs.reg_eax = 0;
+	remove_ticket(newenv);
 	newenv->env_status = ENV_NOT_RUNNABLE;
 	return newenv->env_id;
 }
@@ -120,6 +121,11 @@ sys_env_set_status(envid_t envid, int status)
 	struct Env * env;
 	if (envid2env(envid, &env, 1)){
 		return -E_BAD_ENV;
+	}
+	if (status == ENV_NOT_RUNNABLE) {
+		remove_ticket(env);
+	}else if ((env->env_status != ENV_RUNNABLE && env->env_status != ENV_RUNNING) && status == ENV_RUNNABLE) {
+		add_ticket(env, BASETICKETS);
 	}
 	env->env_status = status;
 	return 0;
@@ -368,6 +374,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	env->env_ipc_from = curenv->env_id;
 	env->env_ipc_value = value;
 	env->env_status = ENV_RUNNABLE;
+	add_ticket(env, BASETICKETS);
 	return 0;
 }
 
@@ -398,6 +405,7 @@ sys_ipc_recv(void *dstva)
 		curenv->env_ipc_dstva = (void *)0xFFFFFFFF;
 	}
 	curenv->env_status = ENV_NOT_RUNNABLE;
+	remove_ticket(curenv);
 	curenv->env_tf.tf_regs.reg_eax = 0;
 	sched_yield();
 	panic("sys_ipc_recv not implemented");
