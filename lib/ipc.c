@@ -39,6 +39,7 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 	}
 	if (from_env_store)
 	{
+		cprintf("thisenv->env_ipc_from = %d\n", thisenv->env_ipc_from);
 		*from_env_store = thisenv->env_ipc_from;
 	}
 	return thisenv->env_ipc_value;

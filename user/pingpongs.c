@@ -20,14 +20,16 @@ umain(int argc, char **argv)
 	}
 
 	while (1) {
+		cprintf("I'm %x, value is %x\n", sys_getenvid(), val);
 		ipc_recv(&who, 0, 0);
 		cprintf("%x got %d from %x (thisenv is %p %x)\n", sys_getenvid(), val, who, thisenv, thisenv->env_id);
 		if (val == 10)
 			return;
 		++val;
+		cprintf("send 0 from %x to %x\n", sys_getenvid(), who);
 		ipc_send(who, 0, 0, 0);
 		if (val == 10)
 			return;
 	}
-
+	cprintf("exit");
 }

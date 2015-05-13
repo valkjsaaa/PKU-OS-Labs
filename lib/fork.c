@@ -117,7 +117,7 @@ fork(void)
 	if (child_envid == 0)
 	{
 		set_pgfault_handler(pgfault);
-		thisenv = &envs[ENVX(sys_getenvid())];
+		// thisenv = &envs[ENVX(sys_getenvid())];
 		return 0;
 	}
 	int i;
@@ -137,10 +137,87 @@ fork(void)
 	return child_envid;
 }
 
+//
+// Map our virtual page pn (address pn*PGSIZE) into the target envid
+// at the same virtual address.  If the page is writable or copy-on-write,
+// the new mapping must be created copy-on-write, and then our mapping must be
+// marked copy-on-write as well.  (Exercise: Why do we need to mark ours
+// copy-on-write again if it was already copy-on-write at the beginning of
+// this function?)
+//
+// Returns: 0 on success, < 0 on error.
+// It is also OK to panic on error.
+//
+static int
+sduppage(envid_t envid, unsigned pn)
+{
+	int r;
+
+	// LAB 4: Your code here.
+	sys_page_map(0, PGADDR(0, pn, 0),
+		             envid, PGADDR(0, pn, 0),
+		             (((uvpt[pn] & PTE_SYSCALL))));
+	return 0;
+}
+
 // Challenge!
 int
 sfork(void)
 {
-	panic("sfork not implemented");
-	return -E_INVAL;
+	// LAB 4: Your code here.
+	set_pgfault_handler(pgfault);
+	envid_t child_envid = sys_exofork();
+	if (child_envid < 0)
+	{
+		panic("fork failed");
+	}
+	if (child_envid == 0)
+	{
+		set_pgfault_handler(pgfault);
+		// thisenv = &envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+	uintptr_t i;
+	for (i = USTACKTOP - PGSIZE; i >= UTEXT; i -= PGSIZE)
+	{
+		if ((uvpd[PDX(i)] & PTE_P) &&
+			(uvpt[PGNUM(i)] & PTE_P) &&
+			(uvpt[PGNUM(i)] & PTE_U))
+		{
+			cprintf("fork:%x\n", i);
+			duppage(child_envid, PGNUM(i));
+		}
+		else
+		{
+			break;
+		}
+	}
+	cprintf("next\n");
+	for (i; i > 0; i -= PGSIZE)
+	{
+		if ((uvpd[PDX(i)] & PTE_P) &&
+		    (uvpt[PGNUM(i)] & PTE_P) &&
+		    (uvpt[PGNUM(i)] & PTE_U))
+		{
+			cprintf("fork:%x\n", i);
+			sduppage(child_envid, PGNUM(i));
+		}
+	}
+	cprintf("next\n");
+	// for (i = 0; i < USTACKTOP; i += PGSIZE)
+	// {
+	// 	if ((uvpd[PDX(i)] & PTE_P) &&
+	// 	    (uvpt[PGNUM(i)] & PTE_P) &&
+	// 	    (uvpt[PGNUM(i)] & PTE_U))
+	// 	{
+	// 		cprintf("fork:%d\n", i);
+	// 		duppage(child_envid, PGNUM(i));
+	// 	}
+	// }
+	cprintf("sfork end\n");
+	extern void _pgfault_upcall();
+	sys_page_alloc(child_envid, (void *)(0xeebff000), PTE_U|PTE_W|PTE_P);
+	sys_env_set_pgfault_upcall(child_envid, _pgfault_upcall);
+	sys_env_set_status(child_envid, ENV_RUNNABLE);
+	return child_envid;
 }

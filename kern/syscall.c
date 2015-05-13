@@ -371,6 +371,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		env->env_ipc_perm = 0;
 	}
 	env->env_ipc_recving = false;
+	cprintf("env_ipc_from = %x\n", curenv->env_id);
 	env->env_ipc_from = curenv->env_id;
 	env->env_ipc_value = value;
 	env->env_status = ENV_RUNNABLE;
