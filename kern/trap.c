@@ -85,19 +85,19 @@ trap_init(void)
 
 	// SETGATE(idt[T_SYSCALL], 0, GD_KT, trap_handlers[T_SYSCALL], 3);
 
-	  int i = 0;
-  for (; i < 16; ++i) {
-	SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
-  }
-  SETGATE(idt[T_NMI], 0, GD_KT, trap_handlers[T_NMI], 0);
-  SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, trap_handlers[IRQ_OFFSET + IRQ_TIMER], 0);
+	int i = 0;
+	for (; i < 16; ++i) {
+		SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
+	}
+	SETGATE(idt[T_NMI], 0, GD_KT, trap_handlers[T_NMI], 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, trap_handlers[IRQ_OFFSET + IRQ_TIMER], 0);
 
-  for (; i < 48 ; ++i) {
-	SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
-  }
-  SETGATE(idt[T_BRKPT], 0, GD_KT, trap_handlers[T_BRKPT], GATE_DPL);
+	for (; i < 48 ; ++i) {
+		SETGATE(idt[i], 0, GD_KT, trap_handlers[i], 0);
+	}
+	SETGATE(idt[T_BRKPT], 0, GD_KT, trap_handlers[T_BRKPT], GATE_DPL);
 
-  SETGATE(idt[T_SYSCALL], 0, GD_KT, trap_handlers[T_SYSCALL], GATE_DPL);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, trap_handlers[T_SYSCALL], GATE_DPL);
 
 	// Per-CPU setup
 	trap_init_percpu();
@@ -207,6 +207,16 @@ trap_dispatch(struct Trapframe *tf)
 	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
 		cprintf("Spurious interrupt on irq 7\n");
 		print_trapframe(tf);
+		return;
+	}
+
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_KBD) {
+		kbd_intr();
+		return;
+	}
+
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SERIAL) {
+		serial_intr();
 		return;
 	}
 
