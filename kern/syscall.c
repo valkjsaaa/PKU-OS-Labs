@@ -140,7 +140,7 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 	{
 		return r;
 	}
-	tf->tf_eip |= 0x3;
+	tf->tf_cs |= 0x3;
 	tf->tf_eflags |= FL_IF;
 
 	e->env_tf = *tf;
@@ -208,12 +208,11 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	if (envid2env(envid, &env, 1)){
 		return -E_BAD_ENV;
 	}
-	struct PageInfo * p = page_alloc(0);
+	struct PageInfo * p = page_alloc(ALLOC_ZERO);
 	if (p == NULL)
 	{
 		return -E_NO_MEM;
 	}
-	p->pp_ref++;
 	int result;
 	if ((result = page_insert(env->env_pgdir, p, va, perm)))
 	{

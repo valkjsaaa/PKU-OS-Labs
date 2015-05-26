@@ -220,8 +220,6 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	struct OpenFile * open_file;
 	if ((r = openfile_lookup(envid, req->req_fileid, &open_file)) < 0)
 		return r;
-	if (open_file->o_fd->fd_offset == open_file->o_file->f_size)
-		return -E_INVAL;
 	if ((r = file_read(open_file->o_file, ret->ret_buf, req->req_n, open_file->o_fd->fd_offset))){
 		if (r > 0)
 		{

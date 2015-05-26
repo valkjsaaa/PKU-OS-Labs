@@ -70,8 +70,9 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 
 	// LAB 4: Your code here.
-	if ((uvpt[pn] & PTE_COW) ||
-	    (uvpt[pn] & PTE_W))
+	if (((uvpt[pn] & PTE_COW) ||
+	    (uvpt[pn] & PTE_W)) &&
+	    !(uvpt[pn] & PTE_SHARE))
 	{
 		sys_page_map(0, PGADDR(0, pn, 0),
 		             envid, PGADDR(0, pn, 0),
@@ -79,8 +80,7 @@ duppage(envid_t envid, unsigned pn)
 		sys_page_map(0, PGADDR(0, pn, 0),
 		             0, PGADDR(0, pn, 0),
 		             ((uvpt[pn] & PTE_SYSCALL) & (~PTE_W)) | PTE_COW);
-	}
-	else{
+	}else{
 		sys_page_map(0, PGADDR(0, pn, 0),
 		             envid, PGADDR(0, pn, 0),
 		             (uvpt[pn] & PTE_SYSCALL));

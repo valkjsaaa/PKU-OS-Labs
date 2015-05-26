@@ -49,10 +49,10 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 
-	void *page_addr = ROUNDDOWN(addr, PGSIZE);
-	if ((r = sys_page_alloc(0, page_addr, (PTE_U|PTE_P|PTE_W))))
+	addr = ROUNDDOWN(addr, PGSIZE);
+	if ((r = sys_page_alloc(0, addr, (PTE_U|PTE_P|PTE_W))))
 		panic("in bc_pgfault, sys_page_alloc failed: %e", r);
-	if ((r = ide_read(blockno * BLKSECTS, page_addr, BLKSECTS)))
+	if ((r = ide_read(blockno * BLKSECTS, addr, BLKSECTS)))
 		panic("in bc_pgfault, ide_read failed: %e", r);
 
 	// Clear the dirty bit for the disk block page since we just read the
@@ -85,12 +85,12 @@ flush_block(void *addr)
 	// LAB 5: Your code here.
 
 	int r;
+	addr = ROUNDDOWN(addr, PGSIZE);
 	if (va_is_mapped(addr) && va_is_dirty(addr))
 	{
-		void *page_addr = ROUNDDOWN(addr, PGSIZE);
-		if ((r = ide_write(blockno * BLKSECTS, page_addr, BLKSECTS)))
+		if ((r = ide_write(blockno * BLKSECTS, addr, BLKSECTS)))
 			panic("in flush_block, ide_write: %e", r);
-		if ((r = sys_page_map(0, page_addr, 0, page_addr, uvpt[PGNUM(page_addr)] & PTE_SYSCALL)) < 0)
+		if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0)
 			panic("in flush_block, sys_page_map: %e", r);
 	}
 	return;
