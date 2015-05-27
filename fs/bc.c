@@ -24,6 +24,13 @@ va_is_dirty(void *va)
 	return (uvpt[PGNUM(va)] & PTE_D) != 0;
 }
 
+// Is this virtual address accessed?
+bool
+va_is_accessed(void *va)
+{
+	return (uvpt[PGNUM(va)] & PTE_A) != 0;
+}
+
 // Fault any disk block that is read in to memory by
 // loading it from disk.
 static void
@@ -48,6 +55,32 @@ bc_pgfault(struct UTrapframe *utf)
 	// the disk.
 	//
 	// LAB 5: you code here:
+
+	//Challenge!:
+
+	static int run_count = 0;
+	if ((run_count++) % 100)
+	{
+		if (super) {
+			uint32_t i;
+			for (i = 1; i < super->s_nblocks; ++i) {
+				void* addr = diskaddr(i);
+				if (va_is_mapped(addr)) {
+					if (va_is_accessed(addr)) {
+						if (va_is_dirty(addr)) {
+							flush_block(addr);
+						}
+						sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL);
+					} else {
+						if (va_is_dirty(addr)) {
+							flush_block(addr);
+						}
+						sys_page_unmap(0, addr);
+					}
+				}
+			}
+		}
+	}
 
 	addr = ROUNDDOWN(addr, PGSIZE);
 	if ((r = sys_page_alloc(0, addr, (PTE_U|PTE_P|PTE_W))))
