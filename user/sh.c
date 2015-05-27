@@ -22,8 +22,9 @@ void
 runcmd(char* s)
 {
 	char *argv[MAXARGS], *t, argv0buf[BUFSIZ];
-	int argc, c, i, r, p[2], fd, pipe_child;
+	int argc, c, i, r, p[2], fd, pipe_child, background;
 
+	background = 0;
 	pipe_child = 0;
 	gettoken(s, 0);
 
@@ -39,6 +40,21 @@ again:
 			}
 			argv[argc++] = t;
 			break;
+
+		case '&':
+		{
+			if ((r = pipe(p)) < 0) {
+				cprintf("pipe: %e", r);
+				exit();
+			}
+			if (p[0] != 0) {
+				dup(p[0], 0);
+				close(p[0]);
+			}
+			close(p[1]);
+			background = 1;
+			break;
+		}
 
 		case '<':	// Input redirection
 			// Grab the filename from the argument list
@@ -114,6 +130,22 @@ again:
 			panic("| not implemented");
 			break;
 
+		case ';':	// Pipe
+			if (debug)
+				cprintf("MULT: %d %d\n", p[0], p[1]);
+			if ((r = fork()) < 0) {
+				cprintf("fork: %e", r);
+				exit();
+			}
+			if (r == 0) {
+				goto again;
+			} else {
+				pipe_child = r;
+				goto runit;
+			}
+			panic("| not implemented");
+			break;
+
 		case 0:		// String is complete
 			// Run the current command!
 			goto runit;
@@ -162,7 +194,9 @@ runit:
 	if (r >= 0) {
 		if (debug)
 			cprintf("[%08x] WAIT %s %08x\n", thisenv->env_id, argv[0], r);
-		wait(r);
+		if(!background) {
+			wait(r);
+		}
 		if (debug)
 			cprintf("[%08x] wait finished\n", thisenv->env_id);
 	}
