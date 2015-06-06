@@ -426,6 +426,12 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+// Only for test
+
+int32_t sys_test(int32_t test_var){
+	return test_var + 1;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -465,6 +471,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return (int32_t)sys_ipc_recv((void *)a1);
 	case SYS_env_set_trapframe:
 		return (int32_t)sys_env_set_trapframe((envid_t) a1, (struct Trapframe *) a2);
+	case SYS_test:
+		return (int32_t)sys_test((uint32_t) a1);
 	default:
 		return -E_INVAL;
 	}
