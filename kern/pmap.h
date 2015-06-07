@@ -8,6 +8,8 @@
 
 #include <inc/memlayout.h>
 #include <inc/assert.h>
+#include <kern/monitor.h>
+
 struct Env;
 
 extern char bootstacktop[], bootstack[];
