@@ -83,6 +83,11 @@ relocated:
 	# Should never get here, but in case we do, just spin.
 spin:	jmp	spin
 
+#define function_hook  __fentry__
+
+.globl function_hook;
+function_hook:
+	ret
 
 .data
 ###################################################################

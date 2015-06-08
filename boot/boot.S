@@ -83,3 +83,8 @@ gdtdesc:
   .word   0x17                            # sizeof(gdt) - 1
   .long   gdt                             # address gdt
 
+#define function_hook  __fentry__
+
+.globl function_hook;
+function_hook:
+  ret
