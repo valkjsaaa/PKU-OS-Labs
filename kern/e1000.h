@@ -99,6 +99,6 @@ struct e1000_data {
 volatile uint32_t * e1000;
 
 int e1000_attach(struct pci_func *pcif);
-int e1000_xmit(void * addr, size_t length);
+int e1000_xmit(uint8_t * addr, size_t length);
 
 #endif	// JOS_KERN_E1000_H

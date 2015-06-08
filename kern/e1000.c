@@ -48,7 +48,7 @@ e1000_attach(struct pci_func *pcif){
 }
 
 int
-e1000_xmit(void * addr, size_t length){
+e1000_xmit(uint8_t * addr, size_t length){
 	uint32_t tail = e1000[E1000_TDT];
 	struct e1000_tx_desc * tail_desc = &tx_desc_buf[tail];
 	if (tail_desc->upper.fields.status != E1000_TXD_STAT_DD)

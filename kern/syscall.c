@@ -12,6 +12,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/e1000.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -436,6 +437,14 @@ sys_time_msec(void)
 	panic("sys_time_msec not implemented");
 }
 
+// Transmit a network packet
+static int
+sys_net_xmit(uint8_t * addr, size_t length)
+{
+	user_mem_assert(curenv, addr, length, PTE_U);
+	return e1000_xmit(addr, length);
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -477,6 +486,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return (int32_t)sys_env_set_trapframe((envid_t) a1, (struct Trapframe *) a2);
 	case SYS_time_msec:
 		return (int32_t)sys_time_msec();
+	case SYS_net_xmit:
+		return (int32_t)sys_net_xmit((uint8_t *)a1, (size_t)a2);
 	default:
 		return -E_INVAL;
 	}
