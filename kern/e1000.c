@@ -46,3 +46,21 @@ e1000_attach(struct pci_func *pcif){
 	e1000_init();
 	return 0;
 }
+
+int
+e1000_xmit(void * addr, size_t length){
+	uint32_t tail = e1000[E1000_TDT];
+	struct e1000_tx_desc * tail_desc = &tx_desc_buf[tail];
+	if (tail_desc->upper.fields.status != E1000_TXD_STAT_DD)
+	{
+		return -1;
+	}
+	length = length > DATA_SIZE ? DATA_SIZE : length;
+	memmove(&tx_data_buf[tail], addr, length);
+	tail_desc->lower.flags.length = length;
+	tail_desc->upper.fields.status = 0;
+	tail_desc->lower.data |=  (E1000_TXD_CMD_RS |
+							   E1000_TXD_CMD_EOP);
+	e1000[E1000_TDT] = (tail + 1) % TXRING_LEN;
+	return 0;
+}

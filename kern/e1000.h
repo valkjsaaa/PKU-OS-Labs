@@ -3,6 +3,7 @@
 
 #include <kern/pci.h>
 #include <kern/pmap.h>
+#include <inc/string.h>
 
 // Some macro adapted from linux e1000_hw.h
 
@@ -67,7 +68,7 @@
 #define E1000_TIPG_IPGR2     0x3FF00000
 
 #define TXRING_LEN 64
-#define TXDATA_SIZE 2048
+#define DATA_SIZE 4096
 /* Transmit Descriptor */
 struct e1000_tx_desc {
     uint64_t buffer_addr;       /* Address of the descriptor's data buffer */
@@ -91,12 +92,13 @@ struct e1000_tx_desc {
 
 /* Data */
 struct e1000_data {
-    uint8_t data[4096];
+    uint8_t data[DATA_SIZE];
 };
 
 #define VALUEATMASK(value, mask) value * ((mask) & ~((mask) << 1))
 volatile uint32_t * e1000;
 
 int e1000_attach(struct pci_func *pcif);
+int e1000_xmit(void * addr, size_t length);
 
 #endif	// JOS_KERN_E1000_H
