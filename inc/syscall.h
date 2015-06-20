@@ -19,6 +19,7 @@ enum {
 	SYS_ipc_recv,
 	SYS_time_msec,
 	SYS_net_xmit,
+	SYS_net_recv,
 	NSYSCALLS
 };
 

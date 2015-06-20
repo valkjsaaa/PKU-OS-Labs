@@ -87,3 +87,20 @@ e1000_xmit(uint8_t * addr, size_t length){
 	e1000[E1000_TDT] = (tail + 1) % TXRING_LEN;
 	return 0;
 }
+
+int
+e1000_recv(uint8_t * data){
+	static uint32_t real_tail = 0;
+	uint32_t tail = real_tail;
+	struct e1000_rx_desc * tail_desc = &rx_desc_buf[tail];
+	if (!(tail_desc->status & E1000_RXD_STAT_DD))
+	{
+		return -1;
+	}
+	size_t length = tail_desc->length;
+	memmove(data, &rx_data_buf[tail], length);
+	tail_desc->status = 0;
+	e1000[E1000_RDT] = tail;
+	real_tail = (tail + 1) % RXRING_LEN;
+	return length;
+}

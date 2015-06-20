@@ -445,6 +445,15 @@ sys_net_xmit(uint8_t * addr, size_t length)
 	return e1000_xmit(addr, length);
 }
 
+// Receive a network packet
+static int
+sys_net_recv(uint8_t * addr)
+{
+	user_mem_assert(curenv, addr, DATA_SIZE, PTE_U);
+	return e1000_recv(addr);
+}
+
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -488,6 +497,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return (int32_t)sys_time_msec();
 	case SYS_net_xmit:
 		return (int32_t)sys_net_xmit((uint8_t *)a1, (size_t)a2);
+	case SYS_net_recv:
+		return (int32_t)sys_net_recv((uint8_t *)a1);
 	default:
 		return -E_INVAL;
 	}

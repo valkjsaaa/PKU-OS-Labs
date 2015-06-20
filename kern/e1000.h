@@ -112,6 +112,30 @@
 #define E1000_TXD_CMD_IP     0x02000000 /* IP packet */
 #define E1000_TXD_CMD_TSE    0x04000000 /* TCP Seg enable */
 #define E1000_TXD_STAT_TC    0x00000004 /* Tx Underrun */
+/* Receive Descriptor bit definitions */
+#define E1000_RXD_STAT_DD       0x01    /* Descriptor Done */
+#define E1000_RXD_STAT_EOP      0x02    /* End of Packet */
+#define E1000_RXD_STAT_IXSM     0x04    /* Ignore checksum */
+#define E1000_RXD_STAT_VP       0x08    /* IEEE VLAN Packet */
+#define E1000_RXD_STAT_UDPCS    0x10    /* UDP xsum caculated */
+#define E1000_RXD_STAT_TCPCS    0x20    /* TCP xsum calculated */
+#define E1000_RXD_STAT_IPCS     0x40    /* IP xsum calculated */
+#define E1000_RXD_STAT_PIF      0x80    /* passed in-exact filter */
+#define E1000_RXD_STAT_IPIDV    0x200   /* IP identification valid */
+#define E1000_RXD_STAT_UDPV     0x400   /* Valid UDP checksum */
+#define E1000_RXD_STAT_ACK      0x8000  /* ACK Packet indication */
+#define E1000_RXD_ERR_CE        0x01    /* CRC Error */
+#define E1000_RXD_ERR_SE        0x02    /* Symbol Error */
+#define E1000_RXD_ERR_SEQ       0x04    /* Sequence Error */
+#define E1000_RXD_ERR_CXE       0x10    /* Carrier Extension Error */
+#define E1000_RXD_ERR_TCPE      0x20    /* TCP/UDP Checksum Error */
+#define E1000_RXD_ERR_IPE       0x40    /* IP Checksum Error */
+#define E1000_RXD_ERR_RXE       0x80    /* Rx Data Error */
+#define E1000_RXD_SPC_VLAN_MASK 0x0FFF  /* VLAN ID is in lower 12 bits */
+#define E1000_RXD_SPC_PRI_MASK  0xE000  /* Priority is in upper 3 bits */
+#define E1000_RXD_SPC_PRI_SHIFT 13
+#define E1000_RXD_SPC_CFI_MASK  0x1000  /* CFI is bit 12 */
+#define E1000_RXD_SPC_CFI_SHIFT 12
  /* TX Inter-packet gap bit definitions */
 #define E1000_TIPG_IPGT      0x000003FF
 #define E1000_TIPG_IPGR1     0x000FFA00
@@ -163,5 +187,6 @@ volatile uint32_t * e1000;
 
 int e1000_attach(struct pci_func *pcif);
 int e1000_xmit(uint8_t * addr, size_t length);
+int e1000_recv(uint8_t * addr);
 
 #endif	// JOS_KERN_E1000_H
