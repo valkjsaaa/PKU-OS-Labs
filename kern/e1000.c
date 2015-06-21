@@ -37,8 +37,25 @@ e1000_init(){
 	e1000[E1000_TIPG] = VALUEATMASK(10, E1000_TIPG_IPGT) |
 						VALUEATMASK(8, E1000_TIPG_IPGR1) |
 						VALUEATMASK(6, E1000_TIPG_IPGR2);
-	e1000[E1000_RAL] = 0x12005452;
-	e1000[E1000_RAH] = 0x00005634 | E1000_RAH_AV;
+
+	// LAB 6: Challenge: read MAC Address from EEPROM
+	e1000[E1000_EERD] = 0x0 << E1000_EEPROM_RW_ADDR_SHIFT;
+	e1000[E1000_EERD] |= E1000_EEPROM_RW_REG_START;
+	while (!(e1000[E1000_EERD] & E1000_EEPROM_RW_REG_DONE));
+	e1000[E1000_RAL] = e1000[E1000_EERD] >> 16;
+
+	e1000[E1000_EERD] = 0x1 << E1000_EEPROM_RW_ADDR_SHIFT;
+	e1000[E1000_EERD] |= E1000_EEPROM_RW_REG_START;
+	while (!(e1000[E1000_EERD] & E1000_EEPROM_RW_REG_DONE));
+	e1000[E1000_RAL] |= e1000[E1000_EERD] & 0xffff0000;
+
+	e1000[E1000_EERD] = 0x2 << E1000_EEPROM_RW_ADDR_SHIFT;
+	e1000[E1000_EERD] |= E1000_EEPROM_RW_REG_START;
+	while (!(e1000[E1000_EERD] & E1000_EEPROM_RW_REG_DONE));
+	e1000[E1000_RAH] = e1000[E1000_EERD] >> 16;
+
+	e1000[E1000_RAH] |= E1000_RAH_AV;
+
 	e1000[E1000_RDBAL] = PADDR(rx_desc_buf);
 	e1000[E1000_RDBAH] = 0x0;
 	e1000[E1000_RDLEN] = RXRING_LEN * sizeof(struct e1000_rx_desc);
@@ -103,4 +120,9 @@ e1000_recv(uint8_t * data){
 	e1000[E1000_RDT] = tail;
 	real_tail = (tail + 1) % RXRING_LEN;
 	return length;
+}
+
+void read_mac_address(uint8_t* mac_address){
+	*(uint32_t*)mac_address = (uint32_t)e1000[E1000_RAL];
+	*(uint16_t*)(mac_address + 4) = (uint16_t)e1000[E1000_RAH];
 }

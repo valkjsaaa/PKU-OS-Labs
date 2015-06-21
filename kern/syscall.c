@@ -453,6 +453,13 @@ sys_net_recv(uint8_t * addr)
 	return e1000_recv(addr);
 }
 
+// Get network MAC address
+static void
+sys_net_get_mac(uint8_t* mac_address){
+	user_mem_assert(curenv, mac_address, 6, PTE_U | PTE_W);
+	read_mac_address(mac_address);
+}
+
 
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
@@ -499,6 +506,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return (int32_t)sys_net_xmit((uint8_t *)a1, (size_t)a2);
 	case SYS_net_recv:
 		return (int32_t)sys_net_recv((uint8_t *)a1);
+	case SYS_net_get_mac:
+		sys_net_get_mac((uint8_t *)a1);
+		return 0;
 	default:
 		return -E_INVAL;
 	}

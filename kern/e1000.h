@@ -21,6 +21,7 @@
  * R/clr - register is read only and is cleared when read
  * A - register array
  */
+#define E1000_EERD     0x00014 / 4  /* EEPROM Read - RW */
 #define E1000_STATUS   0x00008 / 4  /* Device Status - RO */
 #define E1000_TCTL     0x00400 / 4  /* TX Control - RW */
 #define E1000_TIPG     0x00410 / 4  /* TX Inter-packet gap -RW */
@@ -38,6 +39,10 @@
 #define E1000_RDLEN    0x02808 / 4  /* RX Descriptor Length - RW */
 #define E1000_RDH      0x02810 / 4  /* RX Descriptor Head - RW */
 #define E1000_RDT      0x02818 / 4  /* RX Descriptor Tail - RW */
+/* EEPROM Control */
+#define E1000_EEPROM_RW_REG_DONE   0x10 /* Offset to READ/WRITE done bit */
+#define E1000_EEPROM_RW_REG_START  1    /* First bit for telling part to start operation */
+#define E1000_EEPROM_RW_ADDR_SHIFT 8    /* Shift to the address bits */
 /* Transmit Control */
 #define E1000_TCTL_RST    0x00000001    /* software reset */
 #define E1000_TCTL_EN     0x00000002    /* enable tx */
@@ -188,5 +193,6 @@ volatile uint32_t * e1000;
 int e1000_attach(struct pci_func *pcif);
 int e1000_xmit(uint8_t * addr, size_t length);
 int e1000_recv(uint8_t * addr);
+void read_mac_address(uint8_t* mac_address);
 
 #endif	// JOS_KERN_E1000_H
